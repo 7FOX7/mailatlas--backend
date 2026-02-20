@@ -1,0 +1,28 @@
+Goal - Develop a platform where users can do the following: 
+
+1. Find a person's email based on: full name and company email address; 
+2. Verify if the email is valid and, if yes - provide the person's full name, age (if possible), gender, and company (if any)
+
+SDLC - Agile. Sprints: 
+
+- Implement a part where person's email is verified; 
+Stack: Frontend - React, TypeScript; Backend - .NET; Database - Supabase (stores all persons' data that we find based on their email address locally to not do look ups every time when same data is entered); Cache - Redis (performance boost to find a person's data even quicker)
+
+- Implement a part where person's email is searched based on their full name and company email address. 
+Stack: Frontend - React, TypeScript; Backend - .NET; Database - Supabase (stores all persons' data that we find based on their email address locally to not do look ups every time when same data is entered); Cache - Redis (performance boost to find a person's data even quicker)
+
+
+
+Revised: 
+
+Sprints - 5: 
+1 - Email Verifier (data flow, architecture, a logic: if email is valid, then just return "true")
+2 - Email Verifier (polish) - extract the actual user data if email is valid. Store valid emails and user data in DB to avoid email look-ups (costs money), after verifying an email, also add it to Redis for even quicker look ups)
+
+3 - Email finder (data flow, architecture, a logic: if email is found, then just return "true")
+4 - Email finder (polish) - extract the actual user's email if the email is found. Store valid emails and user data in DB to avoid email look-ups (costs money), after extracting an email, also add it to Redis for even quicker look ups)
+
+5 - Overall polish (polish both "Email Verifier" and "Email Finder" services)
+
+
+Total time - 1.5 months (assuming each step takes 1 week)
