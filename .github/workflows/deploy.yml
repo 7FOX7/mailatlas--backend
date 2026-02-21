@@ -1,0 +1,46 @@
+on:
+  push:
+    branches:
+      - 'main'
+
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+
+    steps:
+      # 1. Make sure to the runner's content matches the local content
+      - name: Match runner's content with the local
+        uses: actions/checkout@v5
+
+      # 2. Install Java in runner's environment
+      - name: Install Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      # 3. Build JAR file
+      - name: Build JAR file
+        run: ./gradlew bootJar
+
+      # 4. Deploy to VPS
+      - name: Deploy to VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
+        run:
+          # Create a file and put the content into a file
+          echo "$SSH_PRIVATE_KEY" >> ssh_private_key
+          # Copy JAR file
+          scp build/libs/mailatlas-1.0.0.jar root@IP_ADDRESS:/home/app
+          # Execute commands on Digital Ocean machine
+          ssh root@IP_ADDRESS << 'EOF'
+            # Stop existing app
+            pkill -f 'java -jar' || true
+            # Run a new JAR
+            java -jar /home/app/mailatlas-1.0.0.jar > /home/app/app.log 2>&1 &
+          EOF
