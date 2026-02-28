@@ -20,20 +20,20 @@ public class DNSService {
     @Autowired
     private SMTPServerService smtpServerService;
 
-    @Autowired
-    private UserData userData;
-
     public UserData getData(@Email String email) {
         try {
             ArrayList<Map<String, Object>> MXrecords = this.getMXRecords(email);
             if (MXrecords.isEmpty()) {
                 return null;
             }
+            // will be storing user data
+            UserData userData = new UserData();
             // sort by priority
-            MXrecords.sort(Comparator.comparingInt(r -> Integer.parseInt(((Map<String, String>) (r.get("data"))).get("priority"))));
+            MXrecords.sort(Comparator.comparingInt(r -> (Integer) r.get("priority")));
             // try to connect to each server
             for (Map<String, Object> record : MXrecords) {
-                String server = ((Map<String, String>) record.get("data")).get("exchange");
+                String server = record.get("exchange").toString();
+                log.info("here is the server: " + server);
                 smtpServerService.setServer(server);
                 boolean isConnected = smtpServerService.connect();
                 if (!isConnected) {
@@ -61,12 +61,11 @@ public class DNSService {
         }
     }
 
-
     private ArrayList<Map<String, Object>> getMXRecords(@Email String email) {
         try {
             String domain = extractDomain(email);
             RestClient client = RestClient.builder().baseUrl(BASE_URL).build();
-            Map body = client
+            Map<String, Object> body = client
                     .get()
                     .uri(ENDPOINT + "?" + "domain=" + domain + "&types=MX")
                     .retrieve()
@@ -74,7 +73,14 @@ public class DNSService {
 
             // get records [{}, {}, {}]
             ArrayList<Map<String, Object>> records = (ArrayList<Map<String, Object>>) body.get("records");
-            return records;
+            // will be storing extracted data from each record
+            ArrayList<Map<String, Object>> dataRecords = new ArrayList<>();
+
+            for (Map<String, Object> record : records) {
+                dataRecords.add((Map<String, Object>) record.get("data"));
+            }
+            log.info("received MX records for " + domain + ": " + records);
+            return dataRecords;
         }
         catch (Exception e) {
             System.err.println("Something went wrong: " + e.getMessage());
