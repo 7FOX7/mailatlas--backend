@@ -51,7 +51,7 @@ public class SMTPServerService {
             sendCommand("EHLO " + domain);
             // verify the email
             String response = sendCommand("VRFY " + email);
-
+            log.info("response from the server: " + response);
             return response != null && response.startsWith("250");
         }
         catch (Exception e) {
