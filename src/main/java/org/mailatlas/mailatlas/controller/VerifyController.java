@@ -3,29 +3,27 @@ package org.mailatlas.mailatlas.controller;
 
 import org.mailatlas.mailatlas.dto.response.EmailResponse;
 import org.mailatlas.mailatlas.entity.UserData;
-import org.mailatlas.mailatlas.service.EmailService;
+import org.mailatlas.mailatlas.service.VerifyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-public class EmailController {
+@RequestMapping("/verify")
+public class VerifyController {
     @Autowired
-    private EmailService emailService;
+    private VerifyService verifyService;
 
     @GetMapping
-    @RequestMapping("/verify/{email}")
+    @RequestMapping("/{email}")
     public ResponseEntity<EmailResponse> verifyEmail(@PathVariable String email) {
         if (email.isEmpty()) {
             return ResponseEntity.badRequest().header("Invalid", "Email is not found in the URL.").build();
         }
 
-        UserData data = emailService.getData(email);
+        UserData data = verifyService.getData(email);
         if (data == null) {
-            return ResponseEntity.status(500).header("Server Error", "Failed to verify email.").build();
+            return ResponseEntity.ok().header("Email status", "Provided email failed verification.").build();
         }
         // fill a response
         EmailResponse emailResponse = EmailResponse.builder()
