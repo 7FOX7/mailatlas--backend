@@ -17,7 +17,7 @@ import java.net.Socket;
 public class SMTPServerService {
     private static final int SMTP_PORT = 25;
     // timeout when connecting to a socket
-    private static final int TIMEOUT_MS = 5000;
+    private static final int TIMEOUT_MS = 14000;
 
     private boolean isConnected;
     private String server;      // a server from a MX record
