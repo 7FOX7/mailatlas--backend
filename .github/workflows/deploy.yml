@@ -31,9 +31,6 @@ jobs:
       - name: Check gradlew file
         run: cat ./gradlew
 
-      - name: Make sure bootJar field is present in gradle
-        run: grep "bootJar" ./build.gradle
-
       # 3. Build JAR file
       - name: Build JAR file
         run: |
@@ -48,9 +45,5 @@ jobs:
         run: |
           echo "$SSH_PRIVATE_KEY" > ssh-key-storage
           chmod 600 ssh-key-storage
-          scp -i ssh-key-storage -o StrictHostKeyChecking=no build/libs/mailatlas-1.0.0.jar root@$IP_ADDRESS:/home/app
-          ssh -i ssh-key-storage -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF'
-            pkill -f 'java -jar' || true
-            java -jar /home/app/mailatlas-1.0.0.jar > /home/app/app.log 2>&1 &
-          EOF
+          scp -i ssh-key-storage -o StrictHostKeyChecking=no build/libs/*.jar root@$IP_ADDRESS:/home/app
           rm -rf ssh-key-storage*
