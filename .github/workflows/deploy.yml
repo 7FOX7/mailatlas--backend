@@ -10,6 +10,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-24.04
+    if: github.event_name == 'push'
 
     steps:
       # 1. Make sure to the runner's content matches the local content
@@ -23,24 +24,33 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
 
+      # DEBUG
+      - name: Check file contents
+        run: ls -aq
+
+      - name: Check gradlew file
+        run: cat ./gradlew
+
+      - name: Make sure bootJar field is present in gradle
+        run: grep "bootJar" ./build.gradle
+
       # 3. Build JAR file
       - name: Build JAR file
-        run: ./gradlew bootJar
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bootJar
 
       # 4. Deploy to VPS
       - name: Deploy to VPS
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
-        run:
-          # Create a file and put the content into a file
-          echo "$SSH_PRIVATE_KEY" >> ssh_private_key
-          # Copy JAR file
-          scp build/libs/mailatlas-1.0.0.jar root@IP_ADDRESS:/home/app
-          # Execute commands on Digital Ocean machine
-          ssh root@IP_ADDRESS << 'EOF'
-            # Stop existing app
+        run: |
+          echo "$SSH_PRIVATE_KEY" > ssh-key-storage
+          chmod 600 ssh-key-storage
+          scp -i ssh-key-storage -o StrictHostKeyChecking=no build/libs/mailatlas-1.0.0.jar root@$IP_ADDRESS:/home/app
+          ssh -i ssh-key-storage -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF'
             pkill -f 'java -jar' || true
-            # Run a new JAR
             java -jar /home/app/mailatlas-1.0.0.jar > /home/app/app.log 2>&1 &
           EOF
+          rm -rf ssh-key-storage*
