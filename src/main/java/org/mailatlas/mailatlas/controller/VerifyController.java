@@ -16,6 +16,7 @@ public class VerifyController {
 
     @GetMapping
     @RequestMapping("/{email}")
+    @CrossOrigin("*")
     public ResponseEntity<EmailResponse> verifyEmail(@PathVariable String email) {
         if (email.isEmpty()) {
             return ResponseEntity.badRequest().header("Invalid", "Email is not found in the URL.").build();
