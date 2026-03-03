@@ -7,8 +7,32 @@ on:
     branches:
       - 'main'
 
+env:
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
+
 jobs:
+  check-docker:
+    runs-on: ubuntu-24.04
+
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Make sure docker is running
+        run: |
+          echo "$SSH_PRIVATE_KEY" > ssh-private-key
+          chmod 600 ssh-private-key
+          ssh -i ssh-private-key -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF' 
+            if ! (docker ps | grep -q "redis"); then
+              cd /home/app; 
+              docker-compose up -d; 
+              docker ps | grep "redis"; 
+            fi
+          EOF
+          rm -rf ssh-private-key
+
   deploy:
+    needs: check-docker
     runs-on: ubuntu-24.04
     if: github.event_name == 'push'
 
@@ -39,17 +63,11 @@ jobs:
 
       # 4. Deploy to VPS
       - name: Deploy to VPS
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
         run: |
-          echo "$SSH_PRIVATE_KEY" > ssh-key-storage
-          chmod 600 ssh-key-storage
-          ssh -i ssh-key-storage -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF'
+          echo "$SSH_PRIVATE_KEY" > ssh-private-key
+          chmod 600 ssh-private-key
+          ssh -i ssh-private-key -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF'
             pkill -f "java" || true
           EOF
-          scp -i ssh-key-storage -o StrictHostKeyChecking=no build/libs/*.jar root@$IP_ADDRESS:/home/app
-          ssh -i ssh-key-storage -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF'
-            cd /home/app && nohup java -jar *.jar > app.log && exit 
-          EOF
-          rm -rf ssh-key-storage*
+          scp -i ssh-private-key -o StrictHostKeyChecking=no build/libs/*.jar root@$IP_ADDRESS:/home/app
+          rm -rf ssh-private-key*
