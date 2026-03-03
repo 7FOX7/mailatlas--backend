@@ -45,5 +45,11 @@ jobs:
         run: |
           echo "$SSH_PRIVATE_KEY" > ssh-key-storage
           chmod 600 ssh-key-storage
+          ssh -i ssh-key-storage -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF'
+            pkill -f "java" || true
+          EOF
           scp -i ssh-key-storage -o StrictHostKeyChecking=no build/libs/*.jar root@$IP_ADDRESS:/home/app
+          ssh -i ssh-key-storage -o StrictHostKeyChecking=no root@$IP_ADDRESS << 'EOF'
+            cd /home/app && nohup java -jar *.jar > app.log && exit 
+          EOF
           rm -rf ssh-key-storage*
